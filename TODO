@@ -1,0 +1,9 @@
+[] Consider making a card object creating card objects so can use .cost instead of ["cost"]
+[] Add more error checking to edge cases
+[] Add in networked playing
+[] Add in bot players
+[] Add a playlog with a timestamp
+[] Implement the rest of the base game
+[] Improve the functionality to select cards for the kingdom piles
+[] Organize cards by cost in lists and print costs in the game board.
+[] Add descriptive printing mode for lists
