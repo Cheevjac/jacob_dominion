@@ -28,15 +28,20 @@ class Player:
                 print(f"Invalid index: {card_index}. No card discarded for this index.")
 
 
-    def draw_card(self, count):
+    def draw_card(self, count, to_hand = True):
         """Draw a card from the deck and add it to the hand"""
+        drawn = []
         for _ in range(count):
             if not self.deck:
                 self.shuffle_in_discard()
                 print("Deck is empty, Shuffling in Discard.")
 
             card = self.deck.pop(0)
-            self.hand.append(card)
+            if to_hand:
+                self.hand.append(card)
+            else:
+                drawn.append(card)
+        return drawn
             
     def reset_turn(self):
         """Reset actions, buys, and buying power at the start of the turn discard cards and draw"""

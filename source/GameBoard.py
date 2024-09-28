@@ -35,6 +35,7 @@ class GameBoard:
 
         self.base_piles = {}
         self.kingdom_piles = {}
+        self.trash = []
 
         self.initialize_piles(base_card_names, kingdom_card_names)
 
