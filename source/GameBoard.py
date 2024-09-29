@@ -86,6 +86,7 @@ class GameBoard:
             return False
 
     def cards_available(self):
+        """Return a list of all piles that are not empty."""
         available_cards = []
         for card, count in self.base_piles.items():
             if (count > 0):
@@ -95,5 +96,19 @@ class GameBoard:
             if (count > 0):
                 available_cards.append(card)
         return available_cards
-            
+    
+    def get_empty_piles(self):
+        """Return a list of all piles that are empty."""
+        empty_piles = []
         
+        # Check base piles
+        for card, count in self.base_piles.items():
+            if count == 0:
+                empty_piles.append(card)
+        
+        # Check kingdom piles
+        for card, count in self.kingdom_piles.items():
+            if count == 0:
+                empty_piles.append(card)
+        
+        return empty_piles

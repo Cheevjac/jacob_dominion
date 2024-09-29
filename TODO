@@ -7,3 +7,4 @@
 [] Improve the functionality to select cards for the kingdom piles
 [] Organize cards by cost in lists and print costs in the game board.
 [] Add descriptive printing mode for lists
+[] I am using lists the most inefficient way by constantly drawing the first element and putting in the first element since that requires a shift every op. I should instead draw from the back, but oh well.

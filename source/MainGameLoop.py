@@ -123,6 +123,17 @@ def score_deck(deck):
     vp += int(Gardens_count*(card_count/10))
     return vp
 
+def react(player):
+    reactions = get_cards_of_type(player.hand, "action-reaction")
+    if reactions:
+        if "Moat" in reactions:
+            query = player.name + ":\n would you like to reveal the Moat and be unaffected by the attack?"
+            options = ['yes', 'no']
+            response = get_player_input(query, 1, 1, options)
+            if response[0] == 0:
+                return True
+    return False
+
 def main_game_loop():
     print("Welcome to Jacob's version of the game Dominion!")
     instructions = """
@@ -297,27 +308,29 @@ def play_card(card_name, player, special="none"):
             player.discard_pile.append('Gold')
             other_players = get_other_players
             for other_player in other_players:
-                top_cards = other_player.draw_card(2, False)
-                for card_name in top_cards:
-                    if card_data[card_name]["type"] == "treasure" and card_name != 'Copper':
-                        print(f'{other_player.name} revealed a {card_name} -> trashing.')
-                    else:
-                        print(f'{other_player.name} revealed a {card_name} -> discardings.')
-                        other_player.discard.append(card_name)
+                if not other_player.react():
+                    top_cards = other_player.draw_card(2, False)
+                    for card_name in top_cards:
+                        if card_data[card_name]["type"] == "treasure" and card_name != 'Copper':
+                            print(f'{other_player.name} revealed a {card_name} -> trashing.')
+                        else:
+                            print(f'{other_player.name} revealed a {card_name} -> discardings.')
+                            other_player.discard.append(card_name)
 
         case "Bureaucrat":
             game_board.draw_card_from_pile('Silver')
             player.deck.insert(0,'Silver')
             other_players = get_other_players(player)
             for other_player in other_players:
-                victory_cards = get_cards_of_type(other_player.hand, 'victory')
-                if victory_cards:
-                    query = other_player.name + ":\nPlease select a victory card to put on your deck"
-                    response = get_player_input(query, 1, 1, victory_cards)
-                    move_lists_by_index(source_list=victory_cards, target_list=other_player.deck, indices=response)
-                else:
-                    print(f'{other_player.name}: revealed their hand')
-                    print(simple_card_to_string(other_player.hand))
+                if not other_player.react():
+                    victory_cards = get_cards_of_type(other_player.hand, 'victory')
+                    if victory_cards:
+                        query = other_player.name + ":\nPlease select a victory card to put on your deck"
+                        response = get_player_input(query, 1, 1, victory_cards)
+                        move_lists_by_index(source_list=victory_cards, target_list=other_player.deck, indices=response)
+                    else:
+                        print(f'{other_player.name}: revealed their hand')
+                        print(simple_card_to_string(other_player.hand))
 
         case "Cellar":
             player.actions += 1
@@ -362,7 +375,7 @@ def play_card(card_name, player, special="none"):
                 if card_data[card_name]["type"].contains("action"):
                     options = ['yes', 'no']
                     query = player.name + f":\nKeep the action card {card_name}?"
-                    response = get_player_input(query, 1, 1 options)
+                    response = get_player_input(query, 1, 1, options)
                     if response[0] == 0:
                         player.hand.append(card_name)
                     else:
@@ -382,8 +395,88 @@ def play_card(card_name, player, special="none"):
             #TODO implement the wierd silver thing
 
         case "Militia":
+            player.buy_power += 2
+            other_players = get_other_players(player)
+            for other_player in players:
+                if not other_player.react():
+                    amount_to_discard = len(player.hand) - 3
+                    query = other_player.name + f":\n select {amount_to_discard} cards to discard"
+                    response = get_player_input(query, amount_to_discard, amount_to_discard, other_player.hand)
+                    other_player.discard_cards[response]
             
+        case "Mine":
+            query = player.name + ":\nyou may trash a treasure card from your to gain one costing up to three more."
+            response = get_player_input(query, 0, 1, player.hand)
+            if response:
+                card_name = player.hand.pop(response[0])
+                game_board.trash.append(card_name)
+                value = card_data[card_name]["cost"]
+                price_cards = get_cards_under_price(value+3)
+                type_cards = get_cards_of_type(price_cards, 'treasure')
+                query = player.name +":\nSelect a card to gain to your hand."
+                response = get_player_input(query, 1, 1, type_cards)
+                card_name = type_cards[response[0]]
+                game_board.draw_card_from_pile(card_name)
+                player.hand.append(card_name)
+
+        case "Moat":
+            player.draw_card(2)
+        
+        case "Moneylender":
+            if "Copper" in player.hand:
+                player.hand.remove("Copper")
+                game_board.trash.append("Copper")
+                player.buy_power += 3
+
+        case "Poacher":
+            player.draw_card(1)
+            player.actions += 1
+            player.buy_power += 1
+            empty_piles = game_board.get_empty_piles()
+            discard_count = len(empty_piles)
+            if discard_count > 0:
+                query = player.name + f":\n Select {discard_count} cards to discard."
+                response = get_player_input(query, discard_count, discard_count, player.hand)
+                player.discard_cards(response)
+
+        case "Remodel":
+            query = player.name + ":\nTrash a card from you hand. To gain a card costing up to 2 more."
+            response = get_player_input(query, 1, 1, player.hand)
+            card_name = player.hand.pop(response[0])
+            game_board.trash.append(card_name)
+            value = card_data[card_name]["cost"]
+            under_cards = get_cards_under_price(2 + value)
+            query = player + ":\nChoose a card to gain"
+            response = get_player_input(query, 1, 1, under_cards)
+            card_name = under_cards[response[0]]
+            game_board.draw_card_from_pile(card_name)
+            player.discard_pile.append(card_name)
+
+        case "Sentry":
+            player.draw_card(1)
+            player.actions += 1
+            top_2 = player.draw_card(2, False)
+            to_reorder = []
+            for card_name in top_2:
+                query = player.name + f":\n you revealed {card_name} select desired action." 
+                actions = ["trash", "discard", "reorder"]
+                response = get_player_input(query, 1, 1, actions)
+                if response[0] == 0:
+                    game_board.trash.append(card_name)
+                if response[0] == 1:
+                    player.discard_pile.append(card_name)
+                if response[0] == 2:
+                    to_reorder.append(card_name)
             
+            if len(to_reorder) > 1:
+                query = player.name + ":\n Please select the card you want to put on deck first"
+                response = get_player_input(query, 1, 1, to_reorder)
+                card_name = to_reorder.pop(response[0])
+                player.deck.insert(0, card_name)
+
+            if len(to_reorder) > 0:
+                player.deck.insert(0, to_reorder[0])
+
         case "Smithy":
             player.draw_card(3)
         
@@ -397,11 +490,27 @@ def play_card(card_name, player, special="none"):
         
         case "Vassal":
             player.buy_power += 2
-            #TODO finish implementing this card
+            card_name = player.draw_card(1, False)
+            if "action" in card_data[card_name]["type"]:
+                query = player.name + f":\n You revealed {card_name} would you like to play it."
+                options = ['yes', 'no']
+                response = get_player_input(query, 1, 1, options)
+                if response[0] == 0:
+                    play_card(card_name, player)
+            player.discard_pile.append(card_name)
 
         case "Village":
             player.draw_card(1)
             player.actions(2)
+
+        case "Witch":
+            player.draw_cards(2)
+
+            other_players = get_other_players()
+            for other_player in other_players:
+                if not other_player.react():
+                    game_board.draw_card_from_pile("Curse")
+                    other_player.discard_pile.append("Curse")
 
         case "Workshop":
             under_price = get_cards_under_price(4)
@@ -410,6 +519,44 @@ def play_card(card_name, player, special="none"):
             card = under_price[response[0]]
             game_board.draw_card_from_pile(card)
             player.discard_pile.append(card)
+
+        # case "Adventurer":
+
+        case "Chancellor":
+            player.buy_power += 2
+            query = player.name + ":\nWould you like to immediately discard your whole deck?"
+            options = ['yes', 'no']
+            response = get_player_input(query, 1, 1, options)
+            if response[0] == 0:
+                player.discard_pile.extend(player.hand)
+                player.hand = []
+            
+        case "Feast":
+            player.discard_pile.remove("Feast")
+            game_board.trash.append("Feast")
+            cards_under = get_cards_under_price(5)
+            query = player.name + ":\nPlease select a card to gain to your hand."
+            response = get_player_input(query, 1, 1, cards_under)
+            card_name = cards_under[response[0]]
+            game_board.draw_card_from_pile(card_name)
+            player.discard.append(card_name)
+
+        case "Spy":
+            player.draw_card(1)
+            player.actions += 1
+
+            for player in players:
+                if not other_player.react():
+                    card_drawn = player.draw_card(1, False)[0]
+                    options = ['discard', 'put back']
+                    query = player.name + f":/n {player} revealed the card {card_drawn} what should they do?"
+                    response = get_player_input(query, 1, 1, options)
+                    if response[0] == 0:
+                        player.discard_piles.append(card_drawn)
+                    else:
+                        player.deck.insert(0, card_drawn)
+        
+        # case "Thief":
 
         case "Woodcutter":
             player.buys += 1
