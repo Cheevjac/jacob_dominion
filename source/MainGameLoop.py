@@ -4,12 +4,15 @@ from GameBoard import GameBoard
 
 players = []
 game_board = None
-
+message_interface = None
 
 with open('resources/cards.json', 'r') as file:
     card_data = json.load(file)
 
-def get_player_input(query, valid_min, valid_max, card_list):
+with open('config/config.json', 'r') as file:
+    config = json.load(file)
+
+def get_player_input(query, valid_min, valid_max, card_list, player):
     help_message = f"""
     Help:
     - Type -h or -help for this help message.
@@ -18,14 +21,15 @@ def get_player_input(query, valid_min, valid_max, card_list):
     - The length of the list should be between {valid_min} and {valid_max}.
     - Card numbers must be between 0 and {len(card_list) - 1}.
     """
-    
+
+    query = player.name + ":\n" + query
     while True:
         # Print the query and the card list in the required format
-        user_input = input(f"{query} {card_list_to_string(card_list)}: ")
+        user_input = message_interface.get_input(f"{query} {card_list_to_string(card_list)}: ", player)
 
         # Check if user asked for help
         if user_input.lower() in ['-h', '-help']:
-            print(help_message)
+            message_interface.send_message(help_message, player)
             continue  # Repeat the query after showing help message
 
         # Check if the user asked for card details
@@ -33,9 +37,9 @@ def get_player_input(query, valid_min, valid_max, card_list):
             card_name = user_input[3:].strip()  # Extract card name after "-c"
             if card_name in card_data:
                 card = card_data[card_name]
-                print(f"Name: {card_name}\nCost: {card['cost']}\nDescription: {card['text']}")
+                message_interface.send_message(f"Name: {card_name}\nCost: {card['cost']}\nDescription: {card['text']}", player)
             else:
-                print(f"{card_name} is not a valid card name.")
+                message_interface.send_message(f"{card_name} is not a valid card name.", player)
             continue  # Repeat the query after showing card details
 
         # Parse the space-separated list of inputs (can be numbers or card names)
@@ -43,7 +47,7 @@ def get_player_input(query, valid_min, valid_max, card_list):
 
          # Check if the length is within the valid range
         if not valid_min <= len(input_items) <= valid_max:
-            print(f"Invalid input. Please enter a list of {valid_min} to {valid_max} items.")
+            message_interface.send_message(f"Invalid input. Please enter a list of {valid_min} to {valid_max} items.", player)
             continue
 
         # Check if the input contains valid card names or indices
@@ -55,13 +59,13 @@ def get_player_input(query, valid_min, valid_max, card_list):
                 if 0 <= num < len(card_list):
                     valid_indices.append(num)  # Append the index (number)
                 else:
-                    print(f"Invalid input. Card number {num} is out of range.")
+                    message_interface.send_message(f"Invalid input. Card number {num} is out of range.", player)
                     break
             # Otherwise, treat the item as a card name and find its index
             elif item in card_list:
                 valid_indices.append(card_list.index(item))  # Append the index of the card name
             else:
-                print(f"Invalid input. {item} is neither a valid card number nor a valid card name.")
+                message_interface.send_message(f"Invalid input. {item} is neither a valid card number nor a valid card name.", player)
                 break
         else:
             # If all inputs are valid, return the valid indices
@@ -127,9 +131,9 @@ def react(player):
     reactions = get_cards_of_type(player.hand, "action-reaction")
     if reactions:
         if "Moat" in reactions:
-            query = player.name + ":\n would you like to reveal the Moat and be unaffected by the attack?"
+            query = "would you like to reveal the Moat and be unaffected by the attack?"
             options = ['yes', 'no']
-            response = get_player_input(query, 1, 1, options)
+            response = get_player_input(query, 1, 1, options, player)
             if response[0] == 0:
                 return True
     return False
@@ -294,8 +298,8 @@ def play_card(card_name, player, special="none"):
 
         case "Artisan":
             under_price = get_cards_under_price(5)
-            query = player.name + ":\nplease select a card to add to your hand."
-            response = get_player_input(query, 1, 1, under_price)
+            query = "please select a card to add to your hand."
+            response = get_player_input(query, 1, 1, under_price, player)
             card_name = under_price[response[0]]
             game_board.draw_card_from_pile(card_name)
             player.hand.extend(card_name)

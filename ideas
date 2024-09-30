@@ -1,0 +1,27 @@
+On the topic web play I am looking into some main options.
+1) Is a webpage based method that has a python fast api backend and a java script front end.
+    --- A pro of this design is that it allows for future expansion into a gui if I wanted.
+    --- A downside of this design is it is likely a bit more complicated and less performant than other options.
+    --- I think I have some experience with the javascript, but it would be a lot of new information.
+
+2) Telnet based connection, and using putty or something else to connect.
+    --- This would be really straightforward I think. I would really only need the client and server as a message passing interface.
+    --- One upside of this design is that it would be very similar to the current implementation
+    --- One downside of this design is that it doesn't offer as much flexibilty in interface, and it might be harder for others to use.
+
+3) I think a websocket implementation could be pretty good.
+    --- It looks like the python websocket implementation relies on asycnio, which would be good to learn
+    --- This would be fast, and pretty easy to implement
+    --- I think this doesn't really help with the future gui, but it's not too bad.
+
+I think no matter what interface I use I need to figure out a better message passing method where messages can get sent to one user or to all the users at once. I think I can start doing this without having to do the online stuff, but I am not sure exactly how I want to do it. I also wonder if doing the game log would overlap with this.
+
+When looking at fastapi there is this thing called typer which is basically an api like formatting for CLI apps. It looked interesting, but I kinda prefer my implementation. Fastapi looks like a good tool for this purpose and a good tool to learn.
+
+Telnetlib doesn't look too bad, It think the implementation would be really quick. It is probably less supported than fastapi, but the library still looks good.
+
+I think I am going to go with websockets.
+
+On the topic of a game log, I am debating a few different things. If I want to do anayltics or machine learning on the game logs I want to put in detailed information in a dense machine readable format. I think just logging the messages sent to the user is one option, but it seems worse to me. 
+
+
