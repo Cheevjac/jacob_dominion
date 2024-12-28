@@ -8,6 +8,7 @@ class Player:
         self.hand = []
         self.discard_pile = []
         self.deck = []
+        self.special_conditions = {}
 
     def shuffle_in_discard(self):
         """Shuffle all cards in discard, add them to deck, and remove from discard"""
@@ -19,7 +20,6 @@ class Player:
         """Remove cards from hand based on an array of indices and add them to discard pile"""
         # Sort the indices in descending order to avoid index shifting issues during removal
         card_indices = sorted(card_indices, reverse=True)
-        
         for card_index in card_indices:
             if 0 <= card_index < len(self.hand):
                 card = self.hand.pop(card_index)
@@ -51,6 +51,7 @@ class Player:
         
         self.discard_pile.extend(self.hand)
         self.hand = []
+        self.special_conditions = {}
 
         self.draw_card(5)
 

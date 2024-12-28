@@ -1,16 +1,19 @@
-from datetime import datetime
+from GameLog import GameLog
+from MessageInterface import MessageInterface
 
-class TerminalMessageInterface():
-    def __init__(self):
-        formatted_timestamp = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        file_name = "dominion" + formatted_timestamp + ".log"
-        self.log_file = open(file_name, 'a')
+class TerminalMessageInterface(MessageInterface):
+    def __init__(self, config):
+        self.game_log = GameLog(logging_directory=config["logging_directory"])
 
     def send_message(self, message, player):
-        self.log_file.write(message + '\n')
+        self.game_log.log(f"{message}")
         print(message)
 
     def get_input(self, prompt, player):
         response = input(prompt)
-        self.log_file.write(prompt + response + '\n')
+        self.game_log.log(f"Prompt:{prompt} Response:{response}")
         return response
+
+    def broadcast_message(self, message):
+        self.game_log.log(f"Broadcast:{message}")
+        print(f"{message}")

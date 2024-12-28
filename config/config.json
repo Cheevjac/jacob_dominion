@@ -1,3 +1,4 @@
-{
-    "offlineMode": true
+{   
+    "online_mode": false,
+    "logging_directory": "/home/jacob-cheever/Codebase/jacob_dominion/gamelogs"
 }
